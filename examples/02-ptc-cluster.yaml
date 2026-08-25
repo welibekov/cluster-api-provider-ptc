@@ -1,0 +1,37 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: PTCCluster
+metadata:
+  name: ptc-cluster-demo
+  namespace: default
+spec:
+  identityRef:
+    kind: Secret
+    name: ptc-credentials
+  controlPlaneEndpoint:
+    host: "10.220.112.151"
+    port: 6443
+  region: "baku-bmdc"
+  network:
+    name: "vlan-2415"
+    subnet: "10.220.112.0/24"
+
+##########################
+# Possible configuration #
+##########################
+
+#apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+#kind: PTCCluster
+#metadata:
+#  name: ptc-cluster-demo
+#  namespace: default
+#spec:
+#  identityRef:
+#    kind: Secret
+#    name: ptc-credentials
+#  controlPlaneEndpoint:
+#    host: "10.220.112.151"
+#    port: 6443
+#  region: "${PTC_COMPUTE_REGION}"
+#  network:
+#    name: "${PTC_COMPUTE_NETWORK_NAME}"
+#    subnet: "${PTC_COMPUTE_SUBNET}"
