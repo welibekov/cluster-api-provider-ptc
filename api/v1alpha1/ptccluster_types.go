@@ -17,12 +17,27 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// NetworkSpec defines shared network configuration across cluster and machine specs.
+type NetworkSpec struct {
+	// Name specifies the network/VLAN name on PTC (e.g., vlan-2415).
+	Name string `json:"name"`
+
+	// Subnet specifies the expected CIDR block (e.g., 10.220.112.0/24).
+	// +optional
+	Subnet string `json:"subnet,omitempty"`
+
+	// IPFromPoolRef references an InClusterIPPool for dynamic static IP allocation.
+	// +optional
+	IPFromPoolRef *corev1.TypedLocalObjectReference `json:"ipFromPoolRef,omitempty"`
+}
 
 // PTCClusterSpec defines the desired state of PTCCluster
 type PTCClusterSpec struct {
@@ -34,6 +49,13 @@ type PTCClusterSpec struct {
 	// foo is an example field of PTCCluster. Edit ptccluster_types.go to remove/update
 	// +optional
 	Foo *string `json:"foo,omitempty"`
+
+	// The PTC Region the cluster lives in.
+	Region string `json:"region"`
+
+	// NetworkSpec encapsulates all things related to PTC network.
+	// +optional
+	Network NetworkSpec `json:"network"`
 }
 
 // PTCClusterStatus defines the observed state of PTCCluster.
@@ -57,6 +79,8 @@ type PTCClusterStatus struct {
 	// +listMapKey=type
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	Ready bool `json:"ready"`
 }
 
 // +kubebuilder:object:root=true
