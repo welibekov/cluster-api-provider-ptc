@@ -1,3 +1,23 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: ptc-cluster-demo
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["192.168.0.0/16"]
+    services:
+      cidrBlocks: ["10.96.0.0/12"]
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+    kind: PTCCluster
+    name: ptc-cluster-demo
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: ptc-cluster-demo
+---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: PTCCluster
 metadata:
@@ -12,7 +32,7 @@ spec:
     port: 6443
   region: "baku-bmdc"
   network:
-    name: "vlan-2415"
+    name: "dev-net"
     subnet: "10.220.112.0/24"
 
 ##########################

@@ -86,6 +86,8 @@ spec:
                 type: object
               providerID:
                 type: string
+              sshKey:
+                type: string
               tags:
                 items:
                   type: string

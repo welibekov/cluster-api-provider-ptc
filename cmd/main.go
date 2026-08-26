@@ -37,6 +37,8 @@ import (
 
 	infrastructurev1alpha1 "github.com/welibekov/cluster-api-provider-ptc/api/v1alpha1"
 	"github.com/welibekov/cluster-api-provider-ptc/internal/controller"
+	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/auth/auth"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -46,8 +48,9 @@ var (
 )
 
 func init() {
+	auth.InitClient()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
+	utilruntime.Must(clusterv1.AddToScheme(scheme))
 	utilruntime.Must(infrastructurev1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }

@@ -34,10 +34,18 @@ func WithoutStore() TokenOptionFunc {
 	}
 }
 
-type TokenManager struct{}
+type TokenManager struct {
+	scheme   string
+	host     string
+	basePath string
+}
 
-func NewTokenManager() *TokenManager {
-	return &TokenManager{}
+func NewTokenManager(scheme, host, basePath string) *TokenManager {
+	return &TokenManager{
+		scheme:   scheme,
+		host:     host,
+		basePath: basePath,
+	}
 }
 
 // Store tokens.
@@ -135,9 +143,15 @@ func (t *TokenManager) DecodeToken(token *oauth2.Token) (*types.Principal, error
 }
 
 func (t *TokenManager) RefreshToken(token *oauth2.Token) (*oauth2.Token, error) {
-	host := os.Getenv("PTC_CLIENT_HOST")
-	basePath := os.Getenv("PTC_CLIENT_BASE_PATH")
-	scheme := os.Getenv("PTC_CLIENT_SCHEME")
+	//host := os.Getenv("PTC_CLIENT_HOST")
+	//basePath := os.Getenv("PTC_CLIENT_BASE_PATH")
+	//scheme := os.Getenv("PTC_CLIENT_SCHEME")
+
+	// take params from token manager struct
+	host := t.host
+	basePath := t.basePath
+	scheme := t.scheme
+
 	tenantID := os.Getenv("PTC_AUTH_TENANT_ID")
 	clientID := os.Getenv("PTC_AUTH_CLIENT_ID")
 	clientSecret := os.Getenv("PTC_AUTH_CLIENT_SECRET")

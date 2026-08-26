@@ -48,6 +48,9 @@ type PTCMachineSpec struct {
 	Tags []string `json:"tags"`
 
 	// +optional
+	SSHKey string `json:"sshKey"`
+
+	// +optional
 	Network NetworkSpec `json:"network"`
 
 	ProviderID *string `json:"providerID,omitempty"`
