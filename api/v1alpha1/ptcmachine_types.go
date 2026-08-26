@@ -45,6 +45,9 @@ type PTCMachineSpec struct {
 	Image string `json:"image"`
 
 	// +optional
+	Tags []string `json:"tags"`
+
+	// +optional
 	Network NetworkSpec `json:"network"`
 
 	ProviderID *string `json:"providerID,omitempty"`

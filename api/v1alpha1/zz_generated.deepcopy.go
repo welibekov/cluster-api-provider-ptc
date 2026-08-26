@@ -221,6 +221,11 @@ func (in *PTCMachineSpec) DeepCopyInto(out *PTCMachineSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.Tags != nil {
+		in, out := &in.Tags, &out.Tags
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	in.Network.DeepCopyInto(&out.Network)
 	if in.ProviderID != nil {
 		in, out := &in.ProviderID, &out.ProviderID

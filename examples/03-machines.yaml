@@ -20,6 +20,9 @@ metadata:
   name: ptc-worker-node-1
   namespace: default
 spec:
+  tags:
+    - "cluster.version=0.0.1"
+    - "ptc.client.version=0.5.8"
   instanceType: large
   bootDiskSize: 50
   image: "ubuntu-22.04"
