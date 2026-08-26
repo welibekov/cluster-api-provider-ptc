@@ -5,8 +5,8 @@ metadata:
   namespace: default
 spec:
   identityRef:
-    kind: Secret
     name: ptc-credentials
+    namespace: default
   controlPlaneEndpoint:
     host: "10.220.112.151"
     port: 6443

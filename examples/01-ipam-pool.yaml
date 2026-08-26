@@ -1,13 +1,10 @@
-apiVersion: ipam.cluster.x-k8s.io/v1alpha1
+apiVersion: ipam.cluster.x-k8s.io/v1alpha2
 kind: InClusterIPPool
 metadata:
   name: ptc-ip-pool
   namespace: default
 spec:
-  subnet: 10.220.112.0/24
   addresses:
     - 10.220.112.150-10.220.112.180
-  gateway: 10.220.112.254
   prefix: 24
-  dnsServers:
-    - 8.8.8.8
+  gateway: 10.220.112.254

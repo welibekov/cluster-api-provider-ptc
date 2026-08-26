@@ -39,9 +39,52 @@ spec:
           spec:
             description: spec defines the desired state of PTCMachine
             properties:
+              bootDiskSize:
+                type: integer
               foo:
                 description: foo is an example field of PTCMachine. Edit ptcmachine_types.go
                   to remove/update
+                type: string
+              image:
+                type: string
+              instanceType:
+                type: string
+              network:
+                description: NetworkSpec defines shared network configuration across
+                  cluster and machine specs.
+                properties:
+                  ipFromPoolRef:
+                    description: IPFromPoolRef references an InClusterIPPool for dynamic
+                      static IP allocation.
+                    properties:
+                      apiGroup:
+                        description: |-
+                          APIGroup is the group for the resource being referenced.
+                          If APIGroup is not specified, the specified Kind must be in the core API group.
+                          For any other third-party types, APIGroup is required.
+                        type: string
+                      kind:
+                        description: Kind is the type of resource being referenced
+                        type: string
+                      name:
+                        description: Name is the name of resource being referenced
+                        type: string
+                    required:
+                    - kind
+                    - name
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  name:
+                    description: Name specifies the network/VLAN name on PTC (e.g.,
+                      vlan-2415).
+                    type: string
+                  subnet:
+                    description: Subnet specifies the expected CIDR block (e.g., 10.220.112.0/24).
+                    type: string
+                required:
+                - name
+                type: object
+              providerID:
                 type: string
             type: object
           status:

@@ -10,7 +10,7 @@ spec:
   network:
     name: "vlan-2415"
     ipFromPoolRef:
-      apiVersion: ipam.cluster.x-k8s.io/v1alpha1
+      apiGroup: ipam.cluster.x-k8s.io
       kind: InClusterIPPool
       name: ptc-ip-pool
 ---
@@ -26,7 +26,7 @@ spec:
   network:
     name: "vlan-2415"
     ipFromPoolRef:
-      apiVersion: ipam.cluster.x-k8s.io/v1alpha1
+      apiGroup: ipam.cluster.x-k8s.io
       kind: InClusterIPPool
       name: ptc-ip-pool
 ---
@@ -42,7 +42,7 @@ spec:
   network:
     name: "vlan-2415"
     ipFromPoolRef:
-      apiVersion: ipam.cluster.x-k8s.io/v1alpha1
+      apiGroup: ipam.cluster.x-k8s.io
       kind: InClusterIPPool
       name: ptc-ip-pool
 ---
@@ -58,6 +58,6 @@ spec:
   network:
     name: "vlan-2415"
     ipFromPoolRef:
-      apiVersion: ipam.cluster.x-k8s.io/v1alpha1
+      apiGroup: ipam.cluster.x-k8s.io
       kind: InClusterIPPool
       name: ptc-ip-pool

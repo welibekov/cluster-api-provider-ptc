@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -56,6 +57,14 @@ type PTCClusterSpec struct {
 	// NetworkSpec encapsulates all things related to PTC network.
 	// +optional
 	Network NetworkSpec `json:"network"`
+
+	// IdentityRef points to the Secret containing PTC credentials.
+	// +optional
+	IdentityRef *corev1.SecretReference `json:"identityRef,omitempty"`
+
+	// ControlPlaneEndpoint represents the endpoint for the cluster API server.
+	// +optional
+	ControlPlaneEndpoint clusterv1.APIEndpoint `json:"controlPlaneEndpoint,omitempty"`
 }
 
 // PTCClusterStatus defines the observed state of PTCCluster.

@@ -39,10 +39,38 @@ spec:
           spec:
             description: spec defines the desired state of PTCCluster
             properties:
+              controlPlaneEndpoint:
+                description: ControlPlaneEndpoint represents the endpoint for the
+                  cluster API server.
+                properties:
+                  host:
+                    description: The hostname on which the API server is serving.
+                    type: string
+                  port:
+                    description: The port on which the API server is serving.
+                    format: int32
+                    type: integer
+                required:
+                - host
+                - port
+                type: object
               foo:
                 description: foo is an example field of PTCCluster. Edit ptccluster_types.go
                   to remove/update
                 type: string
+              identityRef:
+                description: IdentityRef points to the Secret containing PTC credentials.
+                properties:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               network:
                 description: NetworkSpec encapsulates all things related to PTC network.
                 properties:

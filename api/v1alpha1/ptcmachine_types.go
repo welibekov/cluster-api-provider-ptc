@@ -34,6 +34,20 @@ type PTCMachineSpec struct {
 	// foo is an example field of PTCMachine. Edit ptcmachine_types.go to remove/update
 	// +optional
 	Foo *string `json:"foo,omitempty"`
+
+	// +optional
+	InstanceType string `json:"instanceType"`
+
+	// +optional
+	BootDiskSize int `json:"bootDiskSize"`
+
+	// +optional
+	Image string `json:"image"`
+
+	// +optional
+	Network NetworkSpec `json:"network"`
+
+	ProviderID *string `json:"providerID,omitempty"`
 }
 
 // PTCMachineStatus defines the observed state of PTCMachine.
