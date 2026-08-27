@@ -203,7 +203,7 @@ func (r *PTCClusterReconciler) reconcileNormal(ctx context.Context, ptcCluster *
 	params := operations.NewListNetworksParams().WithContext(ctx)
 	resp, err := apiClient.Operations.ListNetworks(params,
 		auth.NewAPIKeyAuthWriter(
-			auth.NewTokenManager(ptcScheme, ptcHost, ptcBasepath).LoadTokenMust(),
+			auth.NewTokenManager().LoadTokenMust(),
 		))
 
 	if err != nil {
@@ -217,6 +217,11 @@ func (r *PTCClusterReconciler) reconcileNormal(ctx context.Context, ptcCluster *
 			logger.Info("PTCCluster reconciliation completed successfully", "ready", ptcCluster.Status.Ready)
 
 			ptcCluster.Status.Ready = true
+			ptcCluster.Status.InfrastructureReady = true
+
+			if err := r.Status().Update(ctx, ptcCluster); err != nil {
+				return ctrl.Result{}, fmt.Errorf("failed to update PTCCluster status: %w", err)
+			}
 			return ctrl.Result{}, nil
 		}
 	}
@@ -238,6 +243,10 @@ func (r *PTCClusterReconciler) reconcileDelete(ctx context.Context, ptcCluster *
 
 	// 2. Remove Finalizer to release object from Kubernetes API Server
 	controllerutil.RemoveFinalizer(ptcCluster, ClusterFinalizer)
+	if err := r.Update(ctx, ptcCluster); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to remove finalizer: %w", err)
+	}
+
 	logger.Info("Successfully removed finalizer for PTCCluster")
 
 	return ctrl.Result{}, nil

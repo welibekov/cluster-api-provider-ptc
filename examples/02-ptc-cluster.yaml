@@ -13,10 +13,10 @@ spec:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
     kind: PTCCluster
     name: ptc-cluster-demo
-  controlPlaneRef:
-    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
-    kind: KubeadmControlPlane
-    name: ptc-cluster-demo
+#  controlPlaneRef:
+#    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+#    kind: KubeadmControlPlane
+#    name: ptc-cluster-demo
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: PTCCluster

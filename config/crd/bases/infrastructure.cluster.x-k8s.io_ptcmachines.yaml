@@ -96,6 +96,25 @@ spec:
           status:
             description: status defines the observed state of PTCMachine
             properties:
+              addresses:
+                description: Addresses contains the PTC VM's associated network addresses
+                  (Internal/External IPs, Hostname).
+                items:
+                  description: MachineAddress contains information for the node's
+                    address.
+                  properties:
+                    address:
+                      description: The machine address.
+                      type: string
+                    type:
+                      description: Machine address type, one of Hostname, ExternalIP,
+                        InternalIP, ExternalDNS or InternalDNS.
+                      type: string
+                  required:
+                  - address
+                  - type
+                  type: object
+                type: array
               conditions:
                 description: |-
                   conditions represent the current state of the PTCMachine resource.
@@ -165,6 +184,18 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              failureMessage:
+                description: FailureMessage provides a descriptive explanation of
+                  the terminal error.
+                type: string
+              instanceID:
+                description: InstanceID is the unique identifier assigned by PTC Cloud
+                  to the underlying VM.
+                type: string
+              ready:
+                description: Ready denotes that the PTC VM infrastructure is fully
+                  provisioned and ready.
+                type: boolean
             type: object
         required:
         - spec

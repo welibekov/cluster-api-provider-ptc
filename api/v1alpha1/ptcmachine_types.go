@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -77,6 +78,22 @@ type PTCMachineStatus struct {
 	// +listMapKey=type
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// InstanceID is the unique identifier assigned by PTC Cloud to the underlying VM.
+	// +optional
+	InstanceID string `json:"instanceID,omitempty"`
+
+	// Addresses contains the PTC VM's associated network addresses (Internal/External IPs, Hostname).
+	// +optional
+	Addresses []clusterv1.MachineAddress `json:"addresses,omitempty"`
+
+	// Ready denotes that the PTC VM infrastructure is fully provisioned and ready.
+	// +optional
+	Ready bool `json:"ready"`
+
+	// FailureMessage provides a descriptive explanation of the terminal error.
+	// +optional
+	FailureMessage *string `json:"failureMessage,omitempty"`
 }
 
 // +kubebuilder:object:root=true

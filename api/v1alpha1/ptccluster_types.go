@@ -89,7 +89,8 @@ type PTCClusterStatus struct {
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	Ready bool `json:"ready"`
+	Ready               bool `json:"ready"`
+	InfrastructureReady bool `json:"infrastructureReady"`
 }
 
 // +kubebuilder:object:root=true

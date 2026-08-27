@@ -40,7 +40,11 @@ type TokenManager struct {
 	basePath string
 }
 
-func NewTokenManager(scheme, host, basePath string) *TokenManager {
+func NewTokenManager() *TokenManager {
+	scheme := "http"
+	host := "10.220.112.90"
+	basePath := ""
+
 	return &TokenManager{
 		scheme:   scheme,
 		host:     host,
