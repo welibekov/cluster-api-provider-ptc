@@ -33,7 +33,7 @@ spec:
   region: "baku-bmdc"
   network:
     name: "dev-net"
-    subnet: "10.220.112.0/24"
+    subnet: "255.255.255.0"
 
 ##########################
 # Possible configuration #

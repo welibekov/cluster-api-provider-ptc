@@ -143,11 +143,10 @@ func (r *PTCMachineReconciler) createPTCInstance(
 	params.ImageName = ptcMachine.Spec.Image           // e.g. "ubuntu-22.04"
 	params.Network = ptcCluster.Spec.Network.Name      // "vlan-2415"
 
-	//if ptcCluster.Spec.Network.Subnet != "" {
-	//	params.Subnet = &ptcCluster.Spec.Network.Subnet
-	//}
-	logger.Info("subnet=", ptcCluster.Spec.Network.Subnet)
-	params.Subnet = util.Ptr("255.255.255.0")
+	if ptcCluster.Spec.Network.Subnet != "" {
+		params.Subnet = &ptcCluster.Spec.Network.Subnet
+	}
+	logger.Info("<<<<<Configured network subnet", "subnet=", ptcCluster.Spec.Network.Subnet)
 	if ptcMachine.Spec.BootDiskSize > 0 {
 		diskSize := int64(ptcMachine.Spec.BootDiskSize)
 		params.BootDiskSize = &diskSize
@@ -176,13 +175,26 @@ func (r *PTCMachineReconciler) createPTCInstance(
 		return ctrl.Result{}, fmt.Errorf("error waiting for VM creation task: %w", err)
 	}
 
-	// Extract generated Instance ID from Task Output JSON payload
 	var taskOutput struct {
 		InstanceID string `json:"instance-id"`
 	}
+
+	// Extract generated Instance ID from Task Output JSON payload
 	if len(completedTask.Output) > 0 {
-		_ = json.Unmarshal(completedTask.Output, &taskOutput)
+		// Step 1: Decode the outer JSON string
+		var rawJSONString string
+		if err := json.Unmarshal(completedTask.Output, &rawJSONString); err == nil {
+			// Step 2: Decode the inner JSON object
+			if err := json.Unmarshal([]byte(rawJSONString), &taskOutput); err != nil {
+				logger.Error(err, "failed to unmarshal inner task output payload")
+			}
+		} else {
+			// Fallback: Attempt single-step unmarshal if task output is direct JSON
+			_ = json.Unmarshal(completedTask.Output, &taskOutput)
+		}
 	}
+
+	logger.Info("<<<<<<<Provisioned instance ID", "instance_id=", taskOutput.InstanceID)
 
 	instanceID := taskOutput.InstanceID
 	if instanceID == "" {

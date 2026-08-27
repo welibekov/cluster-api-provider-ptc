@@ -79,7 +79,7 @@ spec:
                       vlan-2415).
                     type: string
                   subnet:
-                    description: Subnet specifies the expected CIDR block (e.g., 10.220.112.0/24).
+                    description: Subnet specifies the expected (e.g.,255.255.255.0).
                     type: string
                 required:
                 - name

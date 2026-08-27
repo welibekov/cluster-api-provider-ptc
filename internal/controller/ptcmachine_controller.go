@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	ipamv1 "sigs.k8s.io/cluster-api/exp/ipam/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/patch"
@@ -250,6 +251,29 @@ func (r *PTCMachineReconciler) reconcileNormal(
 func (r *PTCMachineReconciler) reconcileDelete(ctx context.Context, ptcMachine *infrav1.PTCMachine) (ctrl.Result, error) {
 	logger := logf.FromContext(ctx)
 	logger.Info("Reconciling PTCMachine deletion", "instanceID", ptcMachine.Status.InstanceID)
+
+	// 1. Delete associated IPAddressClaim
+	claimName := fmt.Sprintf("%s-ip", ptcMachine.Name)
+	claimKey := types.NamespacedName{
+		Namespace: ptcMachine.Namespace,
+		Name:      claimName,
+	}
+
+	claim := &ipamv1.IPAddressClaim{}
+	err := r.Get(ctx, claimKey, claim)
+
+	if err == nil {
+		if claim.DeletionTimestamp.IsZero() {
+			logger.Info("Deleting IPAddressClaim", "claim", claimName)
+			if err := r.Delete(ctx, claim); err != nil && !apierrors.IsNotFound(err) {
+				return ctrl.Result{}, fmt.Errorf("failed to delete IPAddressClaim %s: %w", claimName, err)
+			}
+		}
+		logger.Info("Waiting for IPAddressClaim to be removed by IPAM provider...", "claim", claimName)
+		return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
+	} else if !apierrors.IsNotFound(err) {
+		return ctrl.Result{}, fmt.Errorf("failed to check IPAddressClaim existence: %w", err)
+	}
 
 	if ptcMachine.Status.InstanceID != "" {
 		// Call PTC API to delete VM instance

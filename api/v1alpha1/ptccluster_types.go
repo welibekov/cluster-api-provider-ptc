@@ -31,7 +31,7 @@ type NetworkSpec struct {
 	// Name specifies the network/VLAN name on PTC (e.g., vlan-2415).
 	Name string `json:"name"`
 
-	// Subnet specifies the expected CIDR block (e.g., 10.220.112.0/24).
+	// Subnet specifies the expected (e.g.,255.255.255.0).
 	// +optional
 	Subnet string `json:"subnet,omitempty"`
 

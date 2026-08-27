@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -125,10 +126,20 @@ func (r *PTCClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, fmt.Errorf("failed to create patch helper: %w", err)
 	}
 
-	// Always patch status before returning
+	// Guarded patch helper defer execution
 	defer func() {
+		// 🟢 CRITICAL: If finalizers are empty during/after deletion, the object no longer
+		// exists in etcd, so attempting patchHelper.Patch() will fail with NotFound.
+		if !ptcCluster.DeletionTimestamp.IsZero() && len(ptcCluster.Finalizers) == 0 {
+			return
+		}
+
 		if err := patchHelper.Patch(ctx, ptcCluster); err != nil {
-			logger.Error(err, "Failed to patch PTCCluster status")
+			// Ignore NotFound errors since the resource may have been deleted during reconciliation
+			// Unwrap or check if the root cause is a NotFound error
+			if !apierrors.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
+				logger.Error(err, "Failed to patch PTCCluster status")
+			}
 		}
 	}()
 
