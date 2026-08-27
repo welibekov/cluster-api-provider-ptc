@@ -36,6 +36,9 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	infrav1 "github.com/welibekov/cluster-api-provider-ptc/api/v1alpha1"
+	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/auth"
+	ptcclient "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/client"
+	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/client/operations"
 	ptcutil "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/util"
 )
 
@@ -242,36 +245,6 @@ func (r *PTCMachineReconciler) reconcileNormal(
 
 	// Step C: Dispatch or check in-flight async VM creation task
 	return r.createPTCInstance(ctx, ptcMachine, ptcCluster, allocatedIP, userData)
-
-	//// 1. Resolve credentials via PTCCluster identityRef
-	//creds, err := FetchCredentials(ctx, r.Client, ptcCluster.Spec.IdentityRef, ptcCluster.Namespace)
-	//if err != nil {
-	//	return ctrl.Result{}, fmt.Errorf("failed to fetch credentials: %w", err)
-	//}
-
-	//_ = creds // Construct PTC API client here
-
-	//// 2. Call PTC API to provision VM with userData, CPU/RAM specs, and network settings
-	//// instanceID, nodeIP, err := ptcClient.CreateVM(ctx, ...)
-	//instanceID := "vm-demo-123" // Replace with real API call result
-	//nodeIP := "10.220.112.160"  // Replace with assigned VM IP
-
-	//ptcMachine.Status.InstanceID = instanceID
-	//ptcMachine.Status.Addresses = []clusterv1.MachineAddress{
-	//	{
-	//		Type:    clusterv1.MachineInternalIP,
-	//		Address: nodeIP,
-	//	},
-	//	{
-	//		Type:    clusterv1.MachineHostName,
-	//		Address: ptcMachine.Name,
-	//	},
-	//}
-
-	//// Step E: Set Machine Status Ready
-	//ptcMachine.Status.Ready = true
-
-	//return ctrl.Result{}, nil
 }
 
 func (r *PTCMachineReconciler) reconcileDelete(ctx context.Context, ptcMachine *infrav1.PTCMachine) (ctrl.Result, error) {
@@ -281,6 +254,30 @@ func (r *PTCMachineReconciler) reconcileDelete(ctx context.Context, ptcMachine *
 	if ptcMachine.Status.InstanceID != "" {
 		// Call PTC API to delete VM instance
 		// err := ptcClient.DeleteVM(ctx, ptcMachine.Status.InstanceID)
+
+		ptcHost := "10.220.112.90:42099"
+		ptcScheme := "http"
+		ptcBasepath := ""
+
+		// Create a new client instance with config
+		cfg := ptcclient.DefaultTransportConfig().
+			WithHost(ptcHost).
+			WithBasePath(ptcBasepath).
+			WithSchemes([]string{ptcScheme})
+
+		apiClient := ptcclient.NewHTTPClientWithConfig(nil, cfg)
+
+		// 2. Map Machine Spec to PTC API CreateVMParams
+		params := operations.NewDeleteVMParams()
+		params.InstanceID = ptcMachine.Status.InstanceID
+
+		// 3. Trigger VM creation call
+		_, err := apiClient.Operations.DeleteVM(params, auth.NewAPIKeyAuthWriter(auth.NewTokenManager().LoadTokenMust()))
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to call DeleteVM API: %w", err)
+		}
+
+		logger.Info("VM deletetion task started")
 	}
 
 	// Remove finalizer to allow Kubernetes resource removal

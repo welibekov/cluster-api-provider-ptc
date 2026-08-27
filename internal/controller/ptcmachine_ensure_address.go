@@ -146,6 +146,7 @@ func (r *PTCMachineReconciler) createPTCInstance(
 	//if ptcCluster.Spec.Network.Subnet != "" {
 	//	params.Subnet = &ptcCluster.Spec.Network.Subnet
 	//}
+	logger.Info("subnet=", ptcCluster.Spec.Network.Subnet)
 	params.Subnet = util.Ptr("255.255.255.0")
 	if ptcMachine.Spec.BootDiskSize > 0 {
 		diskSize := int64(ptcMachine.Spec.BootDiskSize)
@@ -177,7 +178,7 @@ func (r *PTCMachineReconciler) createPTCInstance(
 
 	// Extract generated Instance ID from Task Output JSON payload
 	var taskOutput struct {
-		InstanceID string `json:"instance_id"`
+		InstanceID string `json:"instance-id"`
 	}
 	if len(completedTask.Output) > 0 {
 		_ = json.Unmarshal(completedTask.Output, &taskOutput)
