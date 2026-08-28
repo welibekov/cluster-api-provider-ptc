@@ -146,12 +146,12 @@ func (r *PTCMachineReconciler) createPTCInstance(
 	if ptcCluster.Spec.Network.Subnet != "" {
 		params.Subnet = &ptcCluster.Spec.Network.Subnet
 	}
-	logger.Info("<<<<<Configured network subnet", "subnet=", ptcCluster.Spec.Network.Subnet)
 	if ptcMachine.Spec.BootDiskSize > 0 {
 		diskSize := int64(ptcMachine.Spec.BootDiskSize)
 		params.BootDiskSize = &diskSize
 	}
 
+	params.SSHKey = util.Ptr(ptcMachine.Spec.SSHKey)
 	params.IPAddress = &allocatedIP
 	params.UserData = &userData
 
@@ -194,14 +194,13 @@ func (r *PTCMachineReconciler) createPTCInstance(
 		}
 	}
 
-	logger.Info("<<<<<<<Provisioned instance ID", "instance_id=", taskOutput.InstanceID)
-
 	instanceID := taskOutput.InstanceID
 	if instanceID == "" {
 		instanceID = ptcMachine.Name // Fallback if API returns empty output
 	}
 
 	// 6. Update PTCMachine Status
+	ptcMachine.Spec.ProviderID = util.Ptr(fmt.Sprintf("ptc:///%s", instanceID))
 	ptcMachine.Status.InstanceID = instanceID
 	ptcMachine.Status.Addresses = []clusterv1.MachineAddress{
 		{

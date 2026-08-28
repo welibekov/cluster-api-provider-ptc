@@ -2,7 +2,7 @@
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Machine
 metadata:
-  name: ptc-worker-node1
+  name: ptc-worker-node-1
   namespace: default
   labels:
     cluster.x-k8s.io/cluster-name: ptc-cluster-demo
