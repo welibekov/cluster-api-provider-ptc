@@ -53,40 +53,4 @@ spec:
       nodeRegistration:
         criSocket: /run/containerd/containerd.sock
 
-# 1. Core CAPI Machine (This makes `kubectl get machines` work)
-#apiVersion: cluster.x-k8s.io/v1beta1
-#kind: Machine
-#metadata:
-#  name: ptc-control-plane-node-1
-#  namespace: default
-#  labels:
-#    cluster.x-k8s.io/cluster-name: ptc-cluster-demo
-#    cluster.x-k8s.io/control-plane: ""
-#spec:
-#  clusterName: ptc-cluster-demo
-#  bootstrap:
-#    dataSecretName: ptc-dummy-bootstrap-data
-#  infrastructureRef:
-#    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
-#    kind: PTCMachine
-#    name: ptc-control-plane-node-1
-#---
-#apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
-#kind: PTCMachine
-#metadata:
-#  labels:
-#    cluster.x-k8s.io/cluster-name: ptc-cluster-demo
-#    cluster.x-k8s.io/control-plane: ""
-#  name: ptc-control-plane-node-1
-#  namespace: default
-#spec:
-#  sshKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAar+cWR6/1L1qOYQ+hxNA8zi7YSLSyApo1h+IBAPWZC"
-#  instanceType: medium
-#  bootDiskSize: 50
-#  image: "ubuntu-24.04"
-#  network:
-#    name: "dev-net"
-#    ipFromPoolRef:
-#      apiGroup: ipam.cluster.x-k8s.io
-#      kind: InClusterIPPool
-#      name: ptc-ip-pool
+
