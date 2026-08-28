@@ -17,12 +17,17 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// ResourceMap represents a map of resource names to quantities.
+type ResourceMap map[corev1.ResourceName]resource.Quantity
 
 // PTCMachineTemplateSpec defines the desired state of PTCMachineTemplate
 type PTCMachineTemplateSpec struct {
@@ -33,7 +38,31 @@ type PTCMachineTemplateSpec struct {
 
 	// foo is an example field of PTCMachineTemplate. Edit ptcmachinetemplate_types.go to remove/update
 	// +optional
-	Foo *string `json:"foo,omitempty"`
+	//Foo *string `json:"foo,omitempty"`
+
+	// Template defines the PTCMachine spec used to create new machines.
+	Template PTCMachineTemplateResource `json:"template"`
+}
+
+// PTCMachineTemplateResource describes the data needed to create a PTCMachine from a template.
+type PTCMachineTemplateResource struct {
+	// ObjectMeta contains metadata for the PTCMachines created from this template (labels, annotations).
+	// +optional
+	ObjectMeta PTCMachineTemplateResourceObjectMeta `json:"metadata,omitempty"`
+
+	// Spec is the specification of the desired behavior of the PTCMachine.
+	Spec PTCMachineSpec `json:"spec"`
+}
+
+// PTCMachineTemplateResourceObjectMeta defines metadata allowed on PTCMachines created from templates.
+type PTCMachineTemplateResourceObjectMeta struct {
+	// Map of string keys and values that can be used to organize and category objects.
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata.
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // PTCMachineTemplateStatus defines the observed state of PTCMachineTemplate.
@@ -57,10 +86,16 @@ type PTCMachineTemplateStatus struct {
 	// +listMapKey=type
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// Capacity defines the resource capacity of machines created from this template.
+	// +optional
+	Capacity ResourceMap `json:"capacity,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:metadata:labels="cluster.x-k8s.io/v1beta1=v1alpha1"
+// +kubebuilder:resource:path=ptcmachinetemplates,scope=Namespaced,categories=cluster-api
 
 // PTCMachineTemplate is the Schema for the ptcmachinetemplates API
 type PTCMachineTemplate struct {

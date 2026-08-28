@@ -174,22 +174,20 @@ func (r *PTCClusterReconciler) reconcileNormal(ctx context.Context, ptcCluster *
 	// Example: verify network specified in ptcCluster.Spec.Network.Name exists
 	logger.Info("Reconciling network infrastructure", "network", ptcCluster.Spec.Network.Name)
 
-	// Step D: Ensure ControlPlaneEndpoint is set
-	// If ControlPlaneEndpoint is pre-defined in Spec, expose it in Status
-	if ptcCluster.Spec.ControlPlaneEndpoint.Host == "" {
-		// In a BYON model without a dynamic load balancer,
-		// ControlPlaneEndpoint must be provided in the spec (e.g., kube-vip / external VIP / static IP)
-		logger.Info("Waiting for ControlPlaneEndpoint to be set in Spec or populated by control plane machine")
-
-		// Set Status.Ready to false until endpoint is available
-		ptcCluster.Status.Ready = false
-		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
-	}
-
 	// Default port to 6443 if not explicitly specified
 	if ptcCluster.Spec.ControlPlaneEndpoint.Port == 0 {
 		ptcCluster.Spec.ControlPlaneEndpoint.Port = 6443
 	}
+
+	// Step E: Expose ControlPlaneEndpoint in Status and mark infrastructure Ready
+	ptcCluster.Status.ControlPlaneEndpoint = clusterv1.APIEndpoint{
+		Host: ptcCluster.Spec.ControlPlaneEndpoint.Host,
+		Port: ptcCluster.Spec.ControlPlaneEndpoint.Port,
+	}
+
+	ptcCluster.Status.Ready = true
+	logger.Info("PTCCluster infrastructure reconciliation ready",
+		"endpoint", ptcCluster.Status.ControlPlaneEndpoint.String())
 
 	// ---------------------------------------------------------------------
 	// 3. Verify target network exists via PTC API
@@ -228,7 +226,6 @@ func (r *PTCClusterReconciler) reconcileNormal(ctx context.Context, ptcCluster *
 			logger.Info("PTCCluster reconciliation completed successfully", "ready", ptcCluster.Status.Ready)
 
 			ptcCluster.Status.Ready = true
-			ptcCluster.Status.InfrastructureReady = true
 
 			if err := r.Status().Update(ctx, ptcCluster); err != nil {
 				return ctrl.Result{}, fmt.Errorf("failed to update PTCCluster status: %w", err)

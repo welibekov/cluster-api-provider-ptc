@@ -98,6 +98,7 @@ type PTCMachineStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:metadata:labels="cluster.x-k8s.io/v1beta1=v1alpha1"
 
 // PTCMachine is the Schema for the ptcmachines API
 type PTCMachine struct {

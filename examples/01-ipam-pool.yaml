@@ -5,6 +5,6 @@ metadata:
   namespace: default
 spec:
   addresses:
-    - 10.220.112.150-10.220.112.180
+    - 10.220.112.151-10.220.112.180
   prefix: 24
   gateway: 10.220.112.254

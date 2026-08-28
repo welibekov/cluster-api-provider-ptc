@@ -4,6 +4,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.21.0
+  labels:
+    cluster.x-k8s.io/v1beta1: v1alpha1
   name: ptcclusters.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -14,7 +16,14 @@ spec:
     singular: ptccluster
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.ready
+      name: Ready
+      type: boolean
+    - jsonPath: .status.controlPlane
+      name: Endpoint
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: PTCCluster is the Schema for the ptcclusters API
@@ -183,13 +192,25 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              infrastructureReady:
-                type: boolean
+              controlPlaneEndpoint:
+                description: ControlPlaneEndpoint represents the endpoint used to
+                  communicate with the control plane.
+                properties:
+                  host:
+                    description: The hostname on which the API server is serving.
+                    type: string
+                  port:
+                    description: The port on which the API server is serving.
+                    format: int32
+                    type: integer
+                required:
+                - host
+                - port
+                type: object
               ready:
+                description: Ready denotes that the ptc cluster infrastructure is
+                  ready.
                 type: boolean
-            required:
-            - infrastructureReady
-            - ready
             type: object
         required:
         - spec

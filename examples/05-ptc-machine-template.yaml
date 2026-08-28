@@ -1,0 +1,42 @@
+# Control Plane Machine Template
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: PTCMachineTemplate
+metadata:
+  name: ptc-control-plane-machinetemplate
+  namespace: default
+spec:
+  template:
+    spec:
+      instanceType: medium
+      bootDiskSize: 50
+      image: "ubuntu-24.04"
+      sshKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAar+cWR6/1L1qOYQ+hxNA8zi7YSLSyApo1h+IBAPWZC"
+      network:
+        name: "dev-net"
+        ipFromPoolRef:
+          apiGroup: ipam.cluster.x-k8s.io
+          kind: InClusterIPPool
+          name: ptc-ip-pool
+---
+# Worker Machine Template
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: PTCMachineTemplate
+metadata:
+  name: ptc-worker-machinetemplate
+  namespace: default
+spec:
+  template:
+    spec:
+      instanceType: large
+      bootDiskSize: 50
+      image: "ubuntu-24.04"
+      sshKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAar+cWR6/1L1qOYQ+hxNA8zi7YSLSyApo1h+IBAPWZC"
+      tags:
+        - "cluster.version=0.0.1"
+        - "ptc.client.version=0.5.8"
+      network:
+        name: "dev-net"
+        ipFromPoolRef:
+          apiGroup: ipam.cluster.x-k8s.io
+          kind: InClusterIPPool
+          name: ptc-ip-pool

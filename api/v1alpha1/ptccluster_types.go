@@ -89,12 +89,20 @@ type PTCClusterStatus struct {
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	Ready               bool `json:"ready"`
-	InfrastructureReady bool `json:"infrastructureReady"`
+	// ControlPlaneEndpoint represents the endpoint used to communicate with the control plane.
+	// +optional
+	ControlPlaneEndpoint clusterv1.APIEndpoint `json:"controlPlaneEndpoint,omitempty"`
+
+	// Ready denotes that the ptc cluster infrastructure is ready.
+	// +optional
+	Ready bool `json:"ready"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:metadata:labels="cluster.x-k8s.io/v1beta1=v1alpha1"
+// +kubebuilder:printcolumn:name="Ready",type="boolean",JSONPath=".status.ready"
+// +kubebuilder:printcolumn:name="Endpoint",type="string",JSONPath=".status.controlPlane"
 
 // PTCCluster is the Schema for the ptcclusters API
 type PTCCluster struct {

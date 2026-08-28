@@ -22,6 +22,8 @@ _unblock() {
   kubectl get machines -n default -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | xargs -I {} kubectl patch machine {} -n default --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
   kubectl get clusters -n default -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | xargs -I {} kubectl patch cluster {} -n default --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
   kubectl get ipaddressclaims -n default -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | xargs -I {} kubectl patch ipaddressclaim {} -n default --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
+
+  kubectl patch kubeadmcontrolplane ptc-control-plane -n default --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
   kubectl get ptcmachines,ptcclusters,machines,clusters,ipaddressclaims,ipaddresses -n default
 }
 

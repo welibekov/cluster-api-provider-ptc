@@ -4,10 +4,14 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.21.0
+  labels:
+    cluster.x-k8s.io/v1beta1: v1alpha1
   name: ptcmachinetemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
   names:
+    categories:
+    - cluster-api
     kind: PTCMachineTemplate
     listKind: PTCMachineTemplateList
     plural: ptcmachinetemplates
@@ -40,14 +44,103 @@ spec:
           spec:
             description: spec defines the desired state of PTCMachineTemplate
             properties:
-              foo:
-                description: foo is an example field of PTCMachineTemplate. Edit ptcmachinetemplate_types.go
-                  to remove/update
-                type: string
+              template:
+                description: Template defines the PTCMachine spec used to create new
+                  machines.
+                properties:
+                  metadata:
+                    description: ObjectMeta contains metadata for the PTCMachines
+                      created from this template (labels, annotations).
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations is an unstructured key value map
+                          stored with a resource that may be set by external tools
+                          to store and retrieve arbitrary metadata.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Map of string keys and values that can be used
+                          to organize and category objects.
+                        type: object
+                    type: object
+                  spec:
+                    description: Spec is the specification of the desired behavior
+                      of the PTCMachine.
+                    properties:
+                      bootDiskSize:
+                        type: integer
+                      foo:
+                        description: foo is an example field of PTCMachine. Edit ptcmachine_types.go
+                          to remove/update
+                        type: string
+                      image:
+                        type: string
+                      instanceType:
+                        type: string
+                      network:
+                        description: NetworkSpec defines shared network configuration
+                          across cluster and machine specs.
+                        properties:
+                          ipFromPoolRef:
+                            description: IPFromPoolRef references an InClusterIPPool
+                              for dynamic static IP allocation.
+                            properties:
+                              apiGroup:
+                                description: |-
+                                  APIGroup is the group for the resource being referenced.
+                                  If APIGroup is not specified, the specified Kind must be in the core API group.
+                                  For any other third-party types, APIGroup is required.
+                                type: string
+                              kind:
+                                description: Kind is the type of resource being referenced
+                                type: string
+                              name:
+                                description: Name is the name of resource being referenced
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          name:
+                            description: Name specifies the network/VLAN name on PTC
+                              (e.g., vlan-2415).
+                            type: string
+                          subnet:
+                            description: Subnet specifies the expected (e.g.,255.255.255.0).
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      providerID:
+                        type: string
+                      sshKey:
+                        type: string
+                      tags:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                required:
+                - spec
+                type: object
             type: object
           status:
             description: status defines the observed state of PTCMachineTemplate
             properties:
+              capacity:
+                additionalProperties:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                description: Capacity defines the resource capacity of machines created
+                  from this template.
+                type: object
               conditions:
                 description: |-
                   conditions represent the current state of the PTCMachineTemplate resource.

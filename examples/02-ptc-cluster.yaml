@@ -4,31 +4,34 @@ metadata:
   name: ptc-cluster-demo
   namespace: default
 spec:
+  controlPlaneEndpoint:
+    host: "10.220.112.150"
+    port: 6443
   clusterNetwork:
     pods:
       cidrBlocks: ["192.168.0.0/16"]
-    services:
-      cidrBlocks: ["10.96.0.0/12"]
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
     kind: PTCCluster
     name: ptc-cluster-demo
-#  controlPlaneRef:
-#    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
-#    kind: KubeadmControlPlane
-#    name: ptc-cluster-demo
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: ptc-control-plane
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: PTCCluster
 metadata:
   name: ptc-cluster-demo
   namespace: default
+  labels:
+    cluster.x-k8s.io/cluster-name: ptc-cluster-demo
 spec:
   identityRef:
     name: ptc-credentials
     namespace: default
   controlPlaneEndpoint:
-    host: "10.220.112.151"
+    host: "10.220.112.150"
     port: 6443
   region: "baku-bmdc"
   network:
@@ -49,7 +52,7 @@ spec:
 #    kind: Secret
 #    name: ptc-credentials
 #  controlPlaneEndpoint:
-#    host: "10.220.112.151"
+#    host: "10.220.112.150"
 #    port: 6443
 #  region: "${PTC_COMPUTE_REGION}"
 #  network:
