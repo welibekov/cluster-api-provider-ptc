@@ -48,11 +48,30 @@ _verify() {
   kubectl version --client && kind version && clusterctl version
 }
 
-main() {
-  _install_kubectl && \
-  _install_kind && \
-  _install_clusterctl && \
-  _verify
+_run_capptc_cluster() {
+  kind delete cluster --name capptc
+  kind create cluster --name capptc
+  kubectl cluster-info --context kind-capptc
+  clusterctl init --core cluster-api --bootstrap kubeadm --control-plane kubeadm
+  clusterctl init --ipam in-cluster
 }
+
+main() {
+  case "$1" in 
+    init)
+     _install_kubectl && \
+     _install_kind && \
+     _install_clusterctl && \
+     _verify
+    ;;
+   run)
+     _run_capptc_cluster
+    ;;
+   *)
+     echo "init|run"
+     exit 1
+  esac
+}
+
 
 main "$@"
