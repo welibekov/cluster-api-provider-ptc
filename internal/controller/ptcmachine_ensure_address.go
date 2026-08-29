@@ -18,7 +18,7 @@ import (
 	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/auth"
 	ptcclient "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/client"
 	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/client/operations"
-	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/opt"
+	ptccloud "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/cloud"
 	tasktypes "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/task/types"
 	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/util"
 )
@@ -64,47 +64,6 @@ func (r *PTCMachineReconciler) ensureIPAddress(ctx context.Context, ptcMachine *
 	}
 
 	return ipObj.Spec.Address, nil
-}
-
-// Helper: Wait/Poll for PTC Task execution until terminal state
-func (r *PTCMachineReconciler) waitForTaskCompletion(ctx context.Context, apiClient *ptcclient.Ptc, taskID string) (*tasktypes.Task, error) {
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-ticker.C:
-			// Fetch task status from API
-			params := operations.NewDescribeTaskParams().WithContext(ctx)
-			params.TaskID = taskID
-			resp, err := apiClient.Operations.DescribeTask(params, auth.NewAPIKeyAuthWriter(auth.NewTokenManager().LoadTokenMust()))
-			if err != nil {
-				return nil, fmt.Errorf("error querying task %s status: %w", taskID, err)
-			}
-			task := &tasktypes.Task{}
-			if err := opt.Rest2Task(resp.GetPayload(), task); err != nil {
-				return nil, err
-			}
-
-			switch task.Status {
-			case "completed":
-				return task, nil
-			case "failed":
-				errMsg := "unknown task failure"
-				if task.ErrMessage != nil {
-					errMsg = *task.ErrMessage
-				}
-				return nil, fmt.Errorf("ptc task %s failed: %s", taskID, errMsg)
-			case "accepted", "running":
-				// Continue polling loop
-				continue
-			default:
-				return nil, fmt.Errorf("unhandled task status %q for task %s", task.Status, taskID)
-			}
-		}
-	}
 }
 
 // Core VM creation logic inside PTCMachineReconciler
@@ -162,15 +121,21 @@ func (r *PTCMachineReconciler) createPTCInstance(
 	}
 
 	// 4. Parse Task payload
-	task := &tasktypes.Task{}
-	if err := opt.Rest2Task(resp.GetPayload(), task); err != nil {
+	task, err := ptccloud.ToTask(resp.GetPayload())
+	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to parse task response: %w", err)
 	}
 
 	logger.Info("VM creation task initiated", "taskID", task.ID, "status", task.Status)
 
-	// 5. Poll Task until completed
-	completedTask, err := r.waitForTaskCompletion(ctx, apiClient, string(task.ID))
+	err = task.Wait(ctx, func(target *tasktypes.Task) error {
+		freshTask, err := ptccloud.DescribeTask(ctx, task.ID.String(), apiClient)
+		if err != nil {
+			return err
+		}
+		*target = *freshTask
+		return nil
+	})
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error waiting for VM creation task: %w", err)
 	}
@@ -180,17 +145,17 @@ func (r *PTCMachineReconciler) createPTCInstance(
 	}
 
 	// Extract generated Instance ID from Task Output JSON payload
-	if len(completedTask.Output) > 0 {
+	if len(task.Output) > 0 {
 		// Step 1: Decode the outer JSON string
 		var rawJSONString string
-		if err := json.Unmarshal(completedTask.Output, &rawJSONString); err == nil {
+		if err := json.Unmarshal(task.Output, &rawJSONString); err == nil {
 			// Step 2: Decode the inner JSON object
 			if err := json.Unmarshal([]byte(rawJSONString), &taskOutput); err != nil {
 				logger.Error(err, "failed to unmarshal inner task output payload")
 			}
 		} else {
 			// Fallback: Attempt single-step unmarshal if task output is direct JSON
-			_ = json.Unmarshal(completedTask.Output, &taskOutput)
+			_ = json.Unmarshal(task.Output, &taskOutput)
 		}
 	}
 
