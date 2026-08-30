@@ -250,7 +250,7 @@ func (r *PTCMachineReconciler) reconcileDelete(ctx context.Context, ptcMachine *
 	logger.Info("Reconciling PTCMachine deletion", "instanceID", ptcMachine.Status.InstanceID)
 
 	// 1. Delete associated IPAddressClaim
-	claimName := fmt.Sprintf("%s-ip", ptcMachine.Name)
+	claimName := fmt.Sprintf("%s-ip-claim", ptcMachine.Name)
 	claimKey := types.NamespacedName{
 		Namespace: ptcMachine.Namespace,
 		Name:      claimName,
