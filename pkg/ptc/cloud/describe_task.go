@@ -4,22 +4,24 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/auth"
-	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/client"
 	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/client/operations"
-	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/task/types"
 )
 
-func DescribeTask(ctx context.Context, taskID string, ptcclient *client.Ptc) (*types.Task, error) {
-	params := operations.NewDescribeTaskParams().WithContext(ctx)
+func (c *Client) DescribeTask(ctx context.Context, taskID string) (*Task, error) {
+	authorizer, err := c.GetAuthorizer(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	params := operations.NewDescribeTaskParams()
 	params.TaskID = taskID
 
-	resp, err := ptcclient.Operations.DescribeTask(params, auth.NewAPIKeyAuthWriter(auth.NewTokenManager().LoadTokenMust()))
+	resp, err := c.apiClient.Operations.DescribeTaskContext(ctx, params, authorizer)
 	if err != nil {
 		return nil, fmt.Errorf("error calling API with auth: %w", err)
 	}
 
-	task, err := ToTask(resp.GetPayload())
+	task, err := toTask(resp.GetPayload())
 	if err != nil {
 		return nil, err
 	}

@@ -37,10 +37,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	infrav1 "github.com/welibekov/cluster-api-provider-ptc/api/v1alpha1"
-
-	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/auth"
-	ptcclient "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/client"
-	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/client/operations"
+	ptccloud "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/cloud"
 )
 
 const (
@@ -50,7 +47,8 @@ const (
 // PTCClusterReconciler reconciles a PTCCluster object
 type PTCClusterReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme          *runtime.Scheme
+	PtcTokenManager *ptccloud.TokenManager
 }
 
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=ptcclusters,verbs=get;list;watch;create;update;patch;delete
@@ -67,8 +65,7 @@ type PTCClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.24.1/pkg/reconcile
 func (r *PTCClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logf.FromContext(ctx)
-	logger := log
+	logger := logf.FromContext(ctx)
 
 	// TODO(user): your logic here
 
@@ -80,16 +77,6 @@ func (r *PTCClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 		return ctrl.Result{}, err
 	}
-
-	// 2. Fetch the owning CAPI Cluster
-	//capiCluster, err := util.GetOwnerCluster(ctx, r.Client, ptcCluster.ObjectMeta)
-	//if err != nil {
-	//	return ctrl.Result{}, fmt.Errorf("failed to get owner CAPI Cluster: %w", err)
-	//}
-	//if capiCluster == nil {
-	//	logger.Info("CAPI Cluster owner not yet set, waiting...")
-	//	return ctrl.Result{}, nil
-	//}
 
 	// 2. Fetch the owning CAPI Cluster
 	capiCluster, err := util.GetOwnerCluster(ctx, r.Client, ptcCluster.ObjectMeta)
@@ -128,7 +115,7 @@ func (r *PTCClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	// Guarded patch helper defer execution
 	defer func() {
-		// 🟢 CRITICAL: If finalizers are empty during/after deletion, the object no longer
+		// CRITICAL: If finalizers are empty during/after deletion, the object no longer
 		// exists in etcd, so attempting patchHelper.Patch() will fail with NotFound.
 		if !ptcCluster.DeletionTimestamp.IsZero() && len(ptcCluster.Finalizers) == 0 {
 			return
@@ -161,16 +148,7 @@ func (r *PTCClusterReconciler) reconcileNormal(ctx context.Context, ptcCluster *
 		return ctrl.Result{}, nil
 	}
 
-	// Step B: Authenticate with PTC Cloud API using Secret
-	creds, err := FetchCredentials(ctx, r.Client, ptcCluster.Spec.IdentityRef, ptcCluster.Namespace)
-	if err != nil {
-		logger.Error(err, "Failed to fetch PTC credentials from secret")
-		return ctrl.Result{RequeueAfter: 15 * time.Second}, nil
-	}
-
-	_ = creds // Construct your ptcClient here
-
-	// Step C: Ensure Network Infrastructure (VLAN / Subnet / Security Rules)
+	// Step B: Ensure Network Infrastructure (VLAN / Subnet / Security Rules)
 	// Example: verify network specified in ptcCluster.Spec.Network.Name exists
 	logger.Info("Reconciling network infrastructure", "network", ptcCluster.Spec.Network.Name)
 
@@ -179,7 +157,7 @@ func (r *PTCClusterReconciler) reconcileNormal(ctx context.Context, ptcCluster *
 		ptcCluster.Spec.ControlPlaneEndpoint.Port = 6443
 	}
 
-	// Step E: Expose ControlPlaneEndpoint in Status and mark infrastructure Ready
+	// Step C: Expose ControlPlaneEndpoint in Status and mark infrastructure Ready
 	ptcCluster.Status.ControlPlaneEndpoint = clusterv1.APIEndpoint{
 		Host: ptcCluster.Spec.ControlPlaneEndpoint.Host,
 		Port: ptcCluster.Spec.ControlPlaneEndpoint.Port,
@@ -197,49 +175,29 @@ func (r *PTCClusterReconciler) reconcileNormal(ctx context.Context, ptcCluster *
 		return ctrl.Result{}, fmt.Errorf("network name is required in PTCCluster spec")
 	}
 
-	ptcHost := "10.220.112.90:42099"
-	ptcScheme := "http"
-	ptcBasepath := ""
-
-	// Create a new client instance with config
-	cfg := ptcclient.DefaultTransportConfig().
-		WithHost(ptcHost).
-		WithBasePath(ptcBasepath).
-		WithSchemes([]string{ptcScheme})
-
-	apiClient := ptcclient.NewHTTPClientWithConfig(nil, cfg)
-
-	params := operations.NewListNetworksParams().WithContext(ctx)
-	resp, err := apiClient.Operations.ListNetworks(params,
-		auth.NewAPIKeyAuthWriter(
-			auth.NewTokenManager().LoadTokenMust(),
-		))
-
+	pc, err := GetClientForCluster(ctx, r.Client, ptcCluster, r.PtcTokenManager)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("error calling API with auth: %w", err)
+		return ctrl.Result{}, err
 	}
 
-	networks := resp.GetPayload()
+	// Describe network by name to check that it exists.
+	if _, err := pc.DescribeNetworkByName(ctx, networkName); err != nil {
+		// Failed
+		ptcCluster.Status.Ready = false
+		logger.Error(err, "Failed to describe network on PTC API", "network", networkName)
 
-	for _, net := range networks {
-		if net.Name == networkName {
-			logger.Info("PTCCluster reconciliation completed successfully", "ready", ptcCluster.Status.Ready)
-
-			ptcCluster.Status.Ready = true
-
-			if err := r.Status().Update(ctx, ptcCluster); err != nil {
-				return ctrl.Result{}, fmt.Errorf("failed to update PTCCluster status: %w", err)
-			}
-			return ctrl.Result{}, nil
-		}
+		// Requeue after a short delay so the reconciler retries if network creation is in progress
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
 
-	// Failed
-	logger.Error(err, "Failed to describe network on PTC API", "network", networkName)
-	ptcCluster.Status.Ready = false
+	// Set the cluster status to ready.
+	ptcCluster.Status.Ready = true
 
-	// Requeue after a short delay so the reconciler retries if network creation is in progress
-	return ctrl.Result{RequeueAfter: 30 * time.Second}, err
+	if err := r.Status().Update(ctx, ptcCluster); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to update PTCCluster status: %w", err)
+	}
+	return ctrl.Result{}, nil
+
 }
 
 func (r *PTCClusterReconciler) reconcileDelete(ctx context.Context, ptcCluster *infrav1.PTCCluster) (ctrl.Result, error) {

@@ -38,7 +38,7 @@ import (
 
 	infrastructurev1alpha1 "github.com/welibekov/cluster-api-provider-ptc/api/v1alpha1"
 	"github.com/welibekov/cluster-api-provider-ptc/internal/controller"
-	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/auth/auth"
+	ptccloud "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/cloud"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	// +kubebuilder:scaffold:imports
 )
@@ -49,7 +49,6 @@ var (
 )
 
 func init() {
-	auth.InitClient()
 	utilruntime.Must(ipamv1.AddToScheme(scheme))
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(clusterv1.AddToScheme(scheme))
@@ -183,16 +182,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	ptcTokenManager := ptccloud.NewTokenManager()
+
 	if err := (&controller.PTCClusterReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:          mgr.GetClient(),
+		Scheme:          mgr.GetScheme(),
+		PtcTokenManager: ptcTokenManager,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "ptccluster")
 		os.Exit(1)
 	}
 	if err := (&controller.PTCMachineReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:          mgr.GetClient(),
+		Scheme:          mgr.GetScheme(),
+		PtcTokenManager: ptcTokenManager,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "ptcmachine")
 		os.Exit(1)

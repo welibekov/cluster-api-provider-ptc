@@ -37,9 +37,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	infrav1 "github.com/welibekov/cluster-api-provider-ptc/api/v1alpha1"
-	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/auth"
-	ptcclient "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/client"
-	"github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/client/operations"
+	ptccloud "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/cloud"
 	ptcutil "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/util"
 )
 
@@ -50,7 +48,8 @@ const (
 // PTCMachineReconciler reconciles a PTCMachine object
 type PTCMachineReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme          *runtime.Scheme
+	PtcTokenManager *ptccloud.TokenManager
 }
 
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=ptcmachines,verbs=get;list;watch;create;update;patch;delete
@@ -68,8 +67,6 @@ type PTCMachineReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.24.1/pkg/reconcile
 func (r *PTCMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := logf.FromContext(ctx)
-
-	// TODO(user): your logic here
 
 	ptcMachine := &infrav1.PTCMachine{}
 	if err := r.Get(ctx, req.NamespacedName, ptcMachine); err != nil {
@@ -277,31 +274,24 @@ func (r *PTCMachineReconciler) reconcileDelete(ctx context.Context, ptcMachine *
 
 	if ptcMachine.Status.InstanceID != "" {
 		// Call PTC API to delete VM instance
-		// err := ptcClient.DeleteVM(ctx, ptcMachine.Status.InstanceID)
 
-		ptcHost := "10.220.112.90:42099"
-		ptcScheme := "http"
-		ptcBasepath := ""
-
-		// Create a new client instance with config
-		cfg := ptcclient.DefaultTransportConfig().
-			WithHost(ptcHost).
-			WithBasePath(ptcBasepath).
-			WithSchemes([]string{ptcScheme})
-
-		apiClient := ptcclient.NewHTTPClientWithConfig(nil, cfg)
-
-		// 2. Map Machine Spec to PTC API CreateVMParams
-		params := operations.NewDeleteVMParams()
-		params.InstanceID = ptcMachine.Status.InstanceID
-
-		// 3. Trigger VM creation call
-		_, err := apiClient.Operations.DeleteVM(params, auth.NewAPIKeyAuthWriter(auth.NewTokenManager().LoadTokenMust()))
+		// 1. Fetch the parent PTCCluster using your helper method
+		ptcCluster, err := r.getPTCCluster(ctx, ptcMachine)
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to call DeleteVM API: %w", err)
+			return ctrl.Result{}, fmt.Errorf("unable to get parent PTCCluster for PTCMachine: %w", err)
+		}
+
+		// 2. Obtain the PTC Client using the exact same GetClientForCluster function!
+		pc, err := GetClientForCluster(ctx, r.Client, ptcCluster, r.PtcTokenManager)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to create ptc client: %w", err)
 		}
 
 		logger.Info("VM deletetion task started")
+
+		if err := pc.DeleteInstance(ctx, ptcMachine.Status.InstanceID); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to remove ptc instance: %w", err)
+		}
 	}
 
 	// Remove finalizer to allow Kubernetes resource removal

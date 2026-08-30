@@ -5,24 +5,15 @@ import (
 	"fmt"
 	"net/url"
 
+	infrav1 "github.com/welibekov/cluster-api-provider-ptc/api/v1alpha1"
+	ptccloud "github.com/welibekov/cluster-api-provider-ptc/pkg/ptc/cloud"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// PTCCredentials holds authenticated session details for PTC API.
-type PTCCredentials struct {
-	OriginalHostname string
-	Scheme           string
-	Hostname         string
-	Username         string
-	Password         string
-	TenantID         string
-	ClientID         string
-}
-
 // FetchCredentials reads and validates the PTC secret from Kubernetes API.
-func FetchCredentials(ctx context.Context, c client.Client, ref *corev1.SecretReference, defaultNamespace string) (*PTCCredentials, error) {
+func FetchCredentials(ctx context.Context, c client.Client, ref *corev1.SecretReference, defaultNamespace string) (*ptccloud.PTCCredentials, error) {
 	if ref == nil {
 		return nil, fmt.Errorf("identityRef is nil")
 	}
@@ -59,7 +50,7 @@ func FetchCredentials(ctx context.Context, c client.Client, ref *corev1.SecretRe
 		return nil, fmt.Errorf("could not parse hostname %s: %w", hostname, err)
 	}
 
-	return &PTCCredentials{
+	return &ptccloud.PTCCredentials{
 		Scheme:           parsedURL.Scheme,
 		Hostname:         parsedURL.Host,
 		Username:         username,
@@ -84,4 +75,25 @@ func parseURL(urlStr string) (*url.URL, error) {
 	}
 
 	return parsedURL, nil
+}
+
+// GetClientForCluster resolves the Secret for a given PTCCluster and returns an initialized PTC Cloud Client.
+func GetClientForCluster(
+	ctx context.Context,
+	c client.Client,
+	ptcCluster *infrav1.PTCCluster,
+	tm *ptccloud.TokenManager,
+) (*ptccloud.Client, error) {
+	if ptcCluster == nil {
+		return nil, fmt.Errorf("ptcCluster cannot be nil")
+	}
+
+	// 1. Fetch raw credentials from Kubernetes Secret
+	creds, err := FetchCredentials(ctx, c, ptcCluster.Spec.IdentityRef, ptcCluster.Namespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch credentials for PTCCluster %s/%s: %w", ptcCluster.Namespace, ptcCluster.Name, err)
+	}
+
+	// 2. Instantiate and return the PTC Client bound with these credentials
+	return ptccloud.NewClient(creds, tm), nil
 }
