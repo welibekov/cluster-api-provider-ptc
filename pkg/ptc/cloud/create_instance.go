@@ -15,26 +15,14 @@ func (c *Client) CreateInstance(ctx context.Context, params *operations.CreateVM
 		return nil, err
 	}
 
-	resp, err := c.apiClient.Operations.CreateVM(params, authorizer)
+	resp, err := c.apiClient.Operations.CreateVMContext(ctx, params, authorizer)
 	if err != nil {
 		return nil, err
 	}
 
-	task, err := toTask(resp.GetPayload())
+	task, err := c.waitForTaskComplete(ctx, resp.GetPayload())
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse task response: %w", err)
-	}
-
-	err = task.Wait(ctx, func(target *Task) error {
-		freshTask, err := c.DescribeTask(ctx, task.ID.String())
-		if err != nil {
-			return err
-		}
-		*target = *freshTask
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error waiting for VM creation task: %w", err)
+		return nil, err
 	}
 
 	var taskOutput struct {

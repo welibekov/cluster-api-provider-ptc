@@ -36,16 +36,5 @@ func NewClient(creds *PTCCredentials, tm *TokenManager) *Client {
 		tokenManager: tm,
 	}
 
-	// Initialize internal token manager using credentials
-	//c.tokenManager = NewTokenManager(creds, c)
-
-	// Attach authed transport so every request automatically handles JWT header & refresh
-	//c.httpClient = &http.Client{
-	//	Transport: &Transport{
-	//		Base:         http.DefaultTransport,
-	//		TokenManager: c.tokenManager,
-	//	},
-	//}
-
 	return c
 }
