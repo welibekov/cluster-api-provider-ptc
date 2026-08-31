@@ -1,11 +1,18 @@
-# More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
-# Ignore everything by default and re-include only needed files
-**
+# .dockerignore
+# Binaries and local build outputs
+bin/
+cover.out
+*.test
 
-# Re-include Go source files (but not *_test.go)
-!**/*.go
-**/*_test.go
+# Git & IDE configs
+.git/
+.gitignore
+.idea/
+.vscode/
 
-# Re-include Go module files
-!go.mod
-!go.sum
+# Local testing and manifests
+infrastructure-components.yaml
+remove.sh
+smart_remove.sh
+examples/
+test/
