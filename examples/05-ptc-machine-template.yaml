@@ -9,8 +9,8 @@ spec:
     spec:
       instanceType: medium
       bootDiskSize: 50
-      image: "ubuntu-24.04"
-      sshKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAar+cWR6/1L1qOYQ+hxNA8zi7YSLSyApo1h+IBAPWZC"
+      image: "ubuntu-24.04-k8s-v1.30"
+      sshKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICAN6TYUH3msKX6yLibjXVUMlLLRv0Q72KdUA2sCSpqF"
       network:
         name: "dev-net"
         ipFromPoolRef:
@@ -29,8 +29,8 @@ spec:
     spec:
       instanceType: large
       bootDiskSize: 50
-      image: "ubuntu-24.04"
-      sshKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAar+cWR6/1L1qOYQ+hxNA8zi7YSLSyApo1h+IBAPWZC"
+      image: "ubuntu-24.04-k8s-v1.30"
+      sshKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICAN6TYUH3msKX6yLibjXVUMlLLRv0Q72KdUA2sCSpqF"
       tags:
         - "cluster.version=0.0.1"
         - "ptc.client.version=0.5.8"
